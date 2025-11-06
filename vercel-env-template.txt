@@ -1,0 +1,70 @@
+# ============================================
+# Variables d'Environnement pour Vercel
+# ============================================
+# Remplissez les valeurs ci-dessous, puis exécutez le script de déploiement
+# ============================================
+
+# ============================================
+# OBLIGATOIRES - À remplir absolument
+# ============================================
+
+# Secret pour NextAuth (générer avec: openssl rand -base64 32)
+AUTH_SECRET=
+
+# URL Supabase (déjà connu: https://peyboqeuyromlytawzcg.supabase.co)
+SUPABASE_URL=https://peyboqeuyromlytawzcg.supabase.co
+
+# Service Role Key Supabase (récupérer depuis Supabase Dashboard > Settings > API)
+# ⚠️ IMPORTANT: Utiliser la SERVICE_ROLE_KEY, pas l'anon key !
+SUPABASE_SERVICE_ROLE_KEY=
+
+# URL PostgreSQL pour Vercel Postgres (sera automatiquement remplie si vous utilisez Vercel Postgres)
+# Sinon, utiliser une connection string externe (Neon, etc.)
+POSTGRES_URL=
+
+# Secret pour sécuriser les endpoints cron (générer avec: openssl rand -hex 32)
+CRON_SECRET=
+
+# ============================================
+# OPTIONNELLES - Pour fonctionnalités avancées
+# ============================================
+
+# URL du serveur MCP Rube (si vous utilisez MCP Rube)
+# MCP_SERVER_URL=
+
+# Clé API MCP Rube (si vous utilisez MCP Rube)
+# MCP_API_KEY=
+
+# Clé API Stagehand pour l'automatisation Instagram (si vous utilisez Stagehand)
+# STAGEHAND_API_KEY=
+
+# URL API Stagehand (par défaut: https://api.stagehand.ai/v1)
+# STAGEHAND_API_URL=https://api.stagehand.ai/v1
+
+# ============================================
+# Feature Flags (true/false)
+# ============================================
+
+# Activer la recherche de leads
+FEATURE_LEAD_RESEARCH=true
+
+# Activer l'automatisation navigateur (Instagram, etc.)
+FEATURE_BROWSER_OUTREACH=true
+
+# Activer la synchronisation CRM
+FEATURE_CRM_SYNC=true
+
+# Activer l'accès à la mémoire
+FEATURE_MEMORY_ACCESS=true
+
+# Activer l'automatisation Instagram
+FEATURE_INSTAGRAM_AUTOMATION=true
+
+# ============================================
+# NOTES
+# ============================================
+# 1. Copiez ce fichier vers .env.vercel.local et remplissez les valeurs
+# 2. Après avoir rempli les variables, exécutez: pnpm vercel:deploy
+# 3. Les variables seront automatiquement synchronisées avec Vercel
+# ============================================
+

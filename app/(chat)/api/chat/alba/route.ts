@@ -40,8 +40,8 @@ import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
-import { generateTitleFromUserMessage } from "../../actions";
-import { type PostRequestBody, postRequestBodySchema } from "./schema";
+import { generateTitleFromUserMessage } from "@/app/(chat)/actions";
+import { type PostRequestBody, postRequestBodySchema } from "@/app/(chat)/api/chat/schema";
 
 export const maxDuration = 60;
 
@@ -63,7 +63,7 @@ const getTokenlensCatalog = cache(
   { revalidate: 24 * 60 * 60 }
 );
 
-export function getStreamContext() {
+function getStreamContext() {
   if (!globalStreamContext) {
     try {
       globalStreamContext = createResumableStreamContext({
@@ -168,11 +168,15 @@ export async function POST(request: Request) {
       userId: session.user.id,
     });
 
-    const memoryContext = await orchestrator.retrieveMemory(
-      typeof message.parts[0] === "string"
-        ? message.parts[0]
-        : message.parts[0]?.text || ""
-    );
+    const firstPart = message.parts[0];
+    const queryText =
+      typeof firstPart === "string"
+        ? firstPart
+        : firstPart && "type" in firstPart && firstPart.type === "text"
+          ? firstPart.text
+          : "";
+
+    const memoryContext = await orchestrator.retrieveMemory(queryText);
 
     const systemPromptWithMemory = memoryContext
       ? `${albaSystemPrompt}\n\nRelevant context from memory:\n${memoryContext}`
