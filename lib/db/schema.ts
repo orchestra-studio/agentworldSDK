@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  index,
   json,
   jsonb,
   pgTable,
@@ -171,3 +172,176 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// CRM Schema for Agent World
+
+export const organization = pgTable("Organization", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Organization = InferSelectModel<typeof organization>;
+
+export const client = pgTable("Client", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  organizationId: uuid("organizationId")
+    .notNull()
+    .references(() => organization.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  domain: varchar("domain", { length: 255 }),
+  igHandle: varchar("igHandle", { length: 255 }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Client = InferSelectModel<typeof client>;
+
+export const project = pgTable("Project", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  clientId: uuid("clientId")
+    .notNull()
+    .references(() => client.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  status: varchar("status", {
+    enum: ["active", "completed", "paused", "archived"],
+  })
+    .notNull()
+    .default("active"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Project = InferSelectModel<typeof project>;
+
+export const lead = pgTable(
+  "Lead",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    clientId: uuid("clientId").references(() => client.id),
+    source: varchar("source", { length: 100 }).notNull(),
+    name: varchar("name", { length: 255 }),
+    igHandle: varchar("igHandle", { length: 255 }),
+    url: text("url"),
+    location: varchar("location", { length: 255 }),
+    email: varchar("email", { length: 255 }),
+    phone: varchar("phone", { length: 50 }),
+    status: varchar("status", {
+      enum: ["new", "contacted", "qualified", "converted", "lost"],
+    })
+      .notNull()
+      .default("new"),
+    score: jsonb("score").$type<{
+      overall?: number;
+      engagement?: number;
+      fit?: number;
+    }>(),
+    dedupeHash: varchar("dedupeHash", { length: 64 }),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    dedupeHashIdx: index("lead_dedupe_hash_idx").on(table.dedupeHash),
+    clientIdIdx: index("lead_client_id_idx").on(table.clientId),
+    statusIdx: index("lead_status_idx").on(table.status),
+  })
+);
+
+export type Lead = InferSelectModel<typeof lead>;
+
+export const leadEvent = pgTable("LeadEvent", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  leadId: uuid("leadId")
+    .notNull()
+    .references(() => lead.id),
+  type: varchar("type", { length: 100 }).notNull(),
+  payloadJson: jsonb("payloadJson").$type<Record<string, unknown>>(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type LeadEvent = InferSelectModel<typeof leadEvent>;
+
+export const interaction = pgTable("Interaction", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  leadId: uuid("leadId").references(() => lead.id),
+  channel: varchar("channel", { length: 50 }).notNull(),
+  direction: varchar("direction", { enum: ["inbound", "outbound"] })
+    .notNull()
+    .default("outbound"),
+  content: text("content").notNull(),
+  metadataJson: jsonb("metadataJson").$type<Record<string, unknown>>(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Interaction = InferSelectModel<typeof interaction>;
+
+export const agentRun = pgTable(
+  "AgentRun",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    agent: varchar("agent", { length: 100 }).notNull(),
+    inputJson: jsonb("inputJson").$type<Record<string, unknown>>(),
+    outputJson: jsonb("outputJson").$type<Record<string, unknown>>(),
+    status: varchar("status", {
+      enum: ["pending", "running", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    startedAt: timestamp("startedAt"),
+    finishedAt: timestamp("finishedAt"),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    statusIdx: index("agent_run_status_idx").on(table.status),
+    agentIdx: index("agent_run_agent_idx").on(table.agent),
+  })
+);
+
+export type AgentRun = InferSelectModel<typeof agentRun>;
+
+export const task = pgTable(
+  "Task",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    runId: uuid("runId")
+      .notNull()
+      .references(() => agentRun.id),
+    kind: varchar("kind", { length: 100 }).notNull(),
+    status: varchar("status", {
+      enum: ["pending", "running", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    inputJson: jsonb("inputJson").$type<Record<string, unknown>>(),
+    outputJson: jsonb("outputJson").$type<Record<string, unknown>>(),
+    error: text("error"),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    runIdIdx: index("task_run_id_idx").on(table.runId),
+    statusIdx: index("task_status_idx").on(table.status),
+  })
+);
+
+export type Task = InferSelectModel<typeof task>;
+
+export const memory = pgTable("Memory", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  content: text("content").notNull(),
+  embedding: jsonb("embedding").$type<number[]>(),
+  entityType: varchar("entityType", { length: 50 }),
+  entityId: uuid("entityId"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Memory = InferSelectModel<typeof memory>;
+
+export const memoryLink = pgTable("MemoryLink", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  entityId: uuid("entityId").notNull(),
+  memoryId: uuid("memoryId")
+    .notNull()
+    .references(() => memory.id),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type MemoryLink = InferSelectModel<typeof memoryLink>;

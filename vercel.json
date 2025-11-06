@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/scheduler/daily-leads",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+
