@@ -3,7 +3,6 @@ import { leadResearch } from "../tools/lead-research";
 import { crmSync } from "../tools/crm-sync";
 import { browserOutreach } from "../tools/browser-outreach";
 import { memoryClient } from "../memory/supabase";
-import type { CoreTool } from "ai";
 
 export const albaTools = {
   memoryAccess,
@@ -42,8 +41,8 @@ export class AlbaOrchestrator {
     }
   }
 
-  getTools(): Record<string, CoreTool> {
-    return albaTools as Record<string, CoreTool>;
+  getTools() {
+    return albaTools;
   }
 
   async executeWorkflow(
